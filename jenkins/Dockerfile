@@ -14,3 +14,5 @@ RUN apt-get update && \
 # ให้ user `jenkins` ใช้ docker ได้ (โดยไม่ต้องเป็น root)
 RUN groupadd -f docker && usermod -aG docker jenkins
 
+# กลับไปใช้ user jenkins
+USER jenkins
