@@ -9,37 +9,57 @@ pipeline {
     stages {
         stage('Clean Containers') {
             steps {
-                echo 'Stopping and removing containers...'
-                sh "docker compose --project-name $PROJECT_NAME down"
+                echo '🧹 Stopping and removing containers...'
+                sh '''
+                    set -ex
+                    docker compose --project-name $PROJECT_NAME down || true
+                '''
             }
         }
 
         stage('Build Frontend and Services') {
             steps {
-                echo 'Building Docker images...'
-                sh "docker compose --project-name $PROJECT_NAME build $SERVICES"
+                echo '🔨 Building Docker images...'
+                sh '''
+                    set -ex
+                    docker compose --project-name $PROJECT_NAME build $SERVICES
+                '''
             }
         }
 
         stage('Start Containers') {
             steps {
-                echo 'Starting containers...'
-                sh "docker compose --project-name $PROJECT_NAME up -d $SERVICES"
+                echo '🚀 Starting containers...'
+                sh '''
+                    set -ex
+                    docker compose --project-name $PROJECT_NAME up -d $SERVICES
+                    echo "🕒 Waiting for containers to initialize..."
+                    sleep 10
+                    docker compose --project-name $PROJECT_NAME ps
+                    echo "📋 Showing last 100 lines of logs from all services..."
+                    docker compose --project-name $PROJECT_NAME logs --tail=100
+                '''
             }
         }
 
         stage('Check Status') {
             steps {
-                echo 'Listing running containers...'
-                sh 'docker ps'
+                echo '📦 Listing running containers...'
+                sh '''
+                    set -ex
+                    docker ps
+                '''
             }
         }
     }
 
     post {
         failure {
-            echo '❌ Build failed. Cleaning up...'
-            sh "docker compose --project-name $PROJECT_NAME down"
+            echo '❌ Build failed. Cleaning up containers...'
+            sh '''
+                set -ex
+                docker compose --project-name $PROJECT_NAME down || true
+            '''
         }
     }
 }
